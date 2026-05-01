@@ -21,8 +21,8 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
     toolbarPosition === 'top'
       ? 'flex flex-col w-full h-screen bg-[#d1d1d1]'
       : toolbarPosition === 'left'
-      ? 'flex flex-row-reverse w-full h-screen bg-[#d1d1d1]'
-      : 'flex flex-row w-full h-screen bg-[#d1d1d1]'
+      ? 'flex flex-row w-full h-screen bg-[#d1d1d1]'
+      : 'flex flex-row-reverse w-full h-screen bg-[#d1d1d1]'
 
   return (
     <div className={containerClass}>

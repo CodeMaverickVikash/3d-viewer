@@ -57,7 +57,8 @@ export default function CameraController({ viewerAPI, autoRotate }: CameraContro
       enableDamping
       dampingFactor={0.08}
       autoRotate={autoRotate}
-      autoRotateSpeed={2}
+      autoRotateSpeed={2} // auto rotate left to right
+      // autoRotateSpeed={-2} // auto rotate right to left
       minDistance={1}
       maxDistance={8}
       makeDefault
