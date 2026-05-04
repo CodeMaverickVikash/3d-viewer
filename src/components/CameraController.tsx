@@ -8,7 +8,6 @@ import type { ViewerAPI } from '../types'
 
 type CameraControllerProps = {
   viewerAPIRef: MutableRefObject<ViewerAPI>
-  autoRotate: boolean
 }
 
 type CameraAnimation = {
@@ -28,9 +27,10 @@ const MAX_POLAR_ANGLE = Math.PI - 0.05
 
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
-export default function CameraController({ viewerAPIRef, autoRotate }: CameraControllerProps) {
+export default function CameraController({ viewerAPIRef }: CameraControllerProps) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const animationRef = useRef<CameraAnimation | null>(null)
+  const autoRotateRef = useRef(false)
   const { camera } = useThree()
 
   const animateCamera = useCallback(
@@ -53,6 +53,8 @@ export default function CameraController({ viewerAPIRef, autoRotate }: CameraCon
   useFrame((_, delta) => {
     const animation = animationRef.current
     const controls = controlsRef.current
+
+    if (controls) controls.autoRotate = autoRotateRef.current
 
     if (!animation || !controls) return
 
@@ -116,6 +118,9 @@ export default function CameraController({ viewerAPIRef, autoRotate }: CameraCon
       orbitRight: () => orbit(ORBIT_STEP, 0),
       orbitUp:    () => orbit(0, -ORBIT_STEP),
       orbitDown:  () => orbit(0, ORBIT_STEP),
+      toggleAutoRotate: () => {
+        autoRotateRef.current = !autoRotateRef.current
+      },
     }
   }, [animateCamera, orbit, viewerAPIRef, zoom])
 
@@ -124,7 +129,7 @@ export default function CameraController({ viewerAPIRef, autoRotate }: CameraCon
       ref={controlsRef}
       enableDamping
       dampingFactor={0.08}
-      autoRotate={autoRotate}
+      autoRotate={false}
       autoRotateSpeed={2} // auto rotate left to right
       // autoRotateSpeed={-2} // auto rotate right to left
       minDistance={1}

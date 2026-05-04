@@ -135,7 +135,6 @@ function Divider({ position }: DividerProps) {
 type ToolbarProps = {
   position: ToolbarPosition
   onPositionChange: (position: ToolbarPosition) => void
-  autoRotate: boolean
   onToggleAutoRotate: () => void
   viewerAPI: MutableRefObject<ViewerAPI>
 }
@@ -143,12 +142,12 @@ type ToolbarProps = {
 export default function Toolbar({
   position,
   onPositionChange,
-  autoRotate,
   onToggleAutoRotate,
   viewerAPI,
 }: ToolbarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [autoRotate, setAutoRotate] = useState(false)
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement)
@@ -183,7 +182,7 @@ export default function Toolbar({
         <ToolBtn
           icon={autoRotate ? <Icons.Pause /> : <Icons.Play />}
           title={autoRotate ? 'Pause rotation' : 'Auto rotate'}
-          onClick={onToggleAutoRotate}
+          onClick={() => { setAutoRotate(v => !v); onToggleAutoRotate() }}
           active={autoRotate}
         />
 

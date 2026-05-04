@@ -10,7 +10,6 @@ type ModelViewerLayoutProps = {
 
 export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelViewerLayoutProps) {
   const [toolbarPosition, setToolbarPosition] = useState<ToolbarPosition>('right')
-  const [autoRotate, setAutoRotate] = useState(false)
 
   // Shared imperative API: Scene fills this, Toolbar reads it
   const viewerAPI = useRef<ViewerAPI>({})
@@ -27,8 +26,7 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
       <Toolbar
         position={toolbarPosition}
         onPositionChange={setToolbarPosition}
-        autoRotate={autoRotate}
-        onToggleAutoRotate={() => setAutoRotate((v) => !v)}
+        onToggleAutoRotate={() => viewerAPI.current.toggleAutoRotate?.()}
         viewerAPI={viewerAPI}
       />
 
@@ -37,7 +35,6 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
         <Scene
           modelUrl={modelUrl}
           hotspots={hotspots}
-          autoRotate={autoRotate}
           viewerAPI={viewerAPI}
         />
       </div>

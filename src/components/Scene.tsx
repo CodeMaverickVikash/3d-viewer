@@ -10,12 +10,10 @@ import type { HotspotData, ViewerAPI } from '../types'
 export default function Scene({
   modelUrl,
   hotspots,
-  autoRotate,
   viewerAPI,
 }: {
   modelUrl: string
   hotspots: HotspotData[]
-  autoRotate: boolean
   viewerAPI: MutableRefObject<ViewerAPI>
 }) {
   return (
@@ -29,7 +27,7 @@ export default function Scene({
       <Environment preset="city" />
 
       {/* Imperative camera API exposed to outside */}
-      <CameraController viewerAPIRef={viewerAPI} autoRotate={autoRotate} />
+      <CameraController viewerAPIRef={viewerAPI} />
 
       <Suspense fallback={null}>
         <Model url={modelUrl} />
