@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import Toolbar from './Toolbar'
 import Scene from './Scene'
 import type { HotspotData, ToolbarPosition, ViewerAPI } from '../types'
+import Loader from './Loader'
 
 type ModelViewerLayoutProps = {
   hotspots?: HotspotData[]
@@ -16,13 +17,14 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
 
   const containerClass =
     toolbarPosition === 'top'
-      ? 'flex flex-col w-full h-screen bg-[#d1d1d1]'
+      ? 'relative flex flex-col w-full h-screen bg-[#d1d1d1]'
       : toolbarPosition === 'left'
-      ? 'flex flex-row w-full h-screen bg-[#d1d1d1]'
-      : 'flex flex-row-reverse w-full h-screen bg-[#d1d1d1]'
+      ? 'relative flex flex-row w-full h-screen bg-[#d1d1d1]'
+      : 'relative flex flex-row-reverse w-full h-screen bg-[#d1d1d1]'
 
   return (
     <div className={containerClass}>
+      <Loader />
       <Toolbar
         position={toolbarPosition}
         onPositionChange={setToolbarPosition}
