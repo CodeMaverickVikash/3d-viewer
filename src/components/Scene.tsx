@@ -33,7 +33,7 @@ export default function Scene({
       <Environment preset="city" />
 
       {/* Imperative camera API exposed to outside */}
-      <CameraController viewerAPI={viewerAPI} autoRotate={autoRotate} />
+      <CameraController viewerAPIRef={viewerAPI} autoRotate={autoRotate} />
 
       <Suspense fallback={null}>
         <Model url={modelUrl} />
