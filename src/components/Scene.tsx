@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { Suspense } from 'react'
+import { Suspense, memo } from 'react'
 import { Environment } from '@react-three/drei'
 import Model from './Model'
 import Hotspot from './Hotspot'
@@ -7,7 +7,7 @@ import CameraController from './CameraController'
 import type { MutableRefObject } from 'react'
 import type { HotspotData, ViewerAPI } from '../types'
 
-export default function Scene({
+const Scene = memo(function Scene({
   modelUrl,
   hotspots,
   viewerAPI,
@@ -41,4 +41,6 @@ export default function Scene({
       </Suspense>
     </Canvas>
   )
-}
+})
+
+export default Scene
