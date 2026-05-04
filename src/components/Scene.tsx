@@ -10,15 +10,11 @@ import type { HotspotData, ViewerAPI } from '../types'
 export default function Scene({
   modelUrl,
   hotspots,
-  activeHotspot,
-  onHotspotClick,
   autoRotate,
   viewerAPI,
 }: {
   modelUrl: string
   hotspots: HotspotData[]
-  activeHotspot: HotspotData | null
-  onHotspotClick: (hotspot: HotspotData | null) => void
   autoRotate: boolean
   viewerAPI: MutableRefObject<ViewerAPI>
 }) {
@@ -42,10 +38,6 @@ export default function Scene({
           <Hotspot
             key={hs.id}
             hotspot={hs}
-            isActive={activeHotspot?.id === hs.id}
-            onClick={() =>
-              onHotspotClick(activeHotspot?.id === hs.id ? null : hs)
-            }
           />
         ))}
       </Suspense>

@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react'
 import Toolbar from './Toolbar'
 import Scene from './Scene'
-import HotspotNavigator from './HotspotNavigator'
 import type { HotspotData, ToolbarPosition, ViewerAPI } from '../types'
 
 type ModelViewerLayoutProps = {
@@ -11,7 +10,6 @@ type ModelViewerLayoutProps = {
 
 export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelViewerLayoutProps) {
   const [toolbarPosition, setToolbarPosition] = useState<ToolbarPosition>('right')
-  const [activeHotspot, setActiveHotspot] = useState<HotspotData | null>(null)
   const [autoRotate, setAutoRotate] = useState(false)
 
   // Shared imperative API: Scene fills this, Toolbar reads it
@@ -39,15 +37,8 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
         <Scene
           modelUrl={modelUrl}
           hotspots={hotspots}
-          activeHotspot={activeHotspot}
-          onHotspotClick={setActiveHotspot}
           autoRotate={autoRotate}
           viewerAPI={viewerAPI}
-        />
-        <HotspotNavigator
-          hotspots={hotspots}
-          activeHotspot={activeHotspot}
-          onNavigate={setActiveHotspot}
         />
       </div>
     </div>

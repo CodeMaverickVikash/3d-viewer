@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { MutableRefObject } from 'react'
 import type { ToolbarPosition, ViewerAPI } from '../types'
 
@@ -26,6 +26,14 @@ const Icons = {
       <polyline points="9 21 3 21 3 15"/>
       <line x1="21" y1="3" x2="14" y2="10"/>
       <line x1="3" y1="21" x2="10" y2="14"/>
+    </svg>
+  ),
+  Minimize: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
+      <polyline points="4 14 10 14 10 20"/>
+      <polyline points="20 10 14 10 14 4"/>
+      <line x1="10" y1="14" x2="3" y2="21"/>
+      <line x1="21" y1="3" x2="14" y2="10"/>
     </svg>
   ),
   ZoomIn: () => (
@@ -140,6 +148,13 @@ export default function Toolbar({
   viewerAPI,
 }: ToolbarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
 
   const isTop = position === 'top'
   const wrapClass = isTop
@@ -179,8 +194,8 @@ export default function Toolbar({
         />
 
         <ToolBtn
-          icon={<Icons.Fullscreen />}
-          title="Fullscreen"
+          icon={isFullscreen ? <Icons.Minimize /> : <Icons.Fullscreen />}
+          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           onClick={toggleFullscreen}
         />
 
