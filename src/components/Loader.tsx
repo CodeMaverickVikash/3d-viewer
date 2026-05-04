@@ -1,7 +1,14 @@
 import { useProgress } from '@react-three/drei'
 
-export default function Loader() {
-  const { active, progress } = useProgress()
+type LoaderProps = {
+  active?: boolean
+  progress?: number
+}
+
+export default function Loader({ active: activeOverride, progress: progressOverride }: LoaderProps) {
+  const progressState = useProgress()
+  const active = activeOverride ?? progressState.active
+  const progress = progressOverride ?? progressState.progress
 
   if (!active) return null
 

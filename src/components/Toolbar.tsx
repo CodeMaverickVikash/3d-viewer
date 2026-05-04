@@ -107,7 +107,9 @@ type ToolBtnProps = {
 function ToolBtn({ icon, title, onClick, active }: ToolBtnProps) {
   return (
     <button
+      type="button"
       title={title}
+      aria-label={title}
       onClick={onClick}
       className={`
         w-9 h-9 flex items-center justify-center rounded-lg text-sm
@@ -157,16 +159,16 @@ export default function Toolbar({
 
   const isTop = position === 'top'
   const wrapClass = isTop
-    ? 'flex flex-row items-center gap-0.5 px-3 py-2 bg-[#2d3748]/95 backdrop-blur-sm rounded-xl shadow-xl z-10 self-center'
+    ? 'flex flex-row items-center gap-0.5 px-3 py-2 bg-[#2d3748]/95 backdrop-blur-sm rounded-b-xl shadow-xl z-10 self-center'
     : position === 'left'
     ? 'flex flex-col items-center gap-0.5 px-2 py-3 bg-[#2d3748]/95 backdrop-blur-sm rounded-r-xl shadow-xl z-10 self-center'
     : 'flex flex-col items-center gap-0.5 px-2 py-3 bg-[#2d3748]/95 backdrop-blur-sm rounded-l-xl shadow-xl z-10 self-center'
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen()
+      document.documentElement.requestFullscreen?.()
     } else {
-      document.exitFullscreen()
+      document.exitFullscreen?.()
     }
   }
 
@@ -174,7 +176,7 @@ export default function Toolbar({
     <div
       className={
         isTop
-          ? 'flex justify-center w-full bg-transparent pt-3 z-10'
+          ? 'flex justify-center w-full bg-transparent z-10'
           : 'flex items-center z-10'
       }
     >

@@ -15,4 +15,5 @@ export type ViewerAPI = {
   orbitRight?: () => void
   orbitUp?: () => void
   orbitDown?: () => void
+  toggleAutoRotate?: () => void
 }
