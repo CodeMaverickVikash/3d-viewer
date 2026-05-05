@@ -31,6 +31,7 @@ describe('Toolbar', () => {
     await user.click(screen.getByRole('button', { name: 'Reset camera' }))
     await user.click(screen.getByRole('button', { name: 'Zoom in' }))
     await user.click(screen.getByRole('button', { name: 'Zoom out' }))
+    await user.click(screen.getByRole('button', { name: 'More options' }))
     await user.click(screen.getByRole('button', { name: 'Orbit left' }))
     await user.click(screen.getByRole('button', { name: 'Orbit right' }))
     await user.click(screen.getByRole('button', { name: 'Orbit up' }))
@@ -64,7 +65,9 @@ describe('Toolbar', () => {
     expect(onToggleAutoRotate).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Pause rotation' })).toBeInTheDocument()
 
+    await user.click(screen.getByRole('button', { name: 'More options' }))
     await user.click(screen.getByRole('button', { name: 'Toolbar: Left' }))
+    await user.click(screen.getByRole('button', { name: 'More options' }))
     await user.click(screen.getByRole('button', { name: 'Toolbar: Top' }))
 
     expect(onPositionChange).toHaveBeenNthCalledWith(1, 'left')

@@ -39,7 +39,7 @@ export const Default: Story = {}
 export const ModelViewerDev: Story = {
   args: {
     renderer: 'model-viewer',
-    modelUrl: 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb',
+    modelUrl: '/models/modelviewer-demo.gltf',
     hotspots: [
       {
         id: 1,
