@@ -109,6 +109,11 @@ const Icons = {
       <circle cx="19" cy="12" r="1.5"/>
     </svg>
   ),
+  Back: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  ),
 }
 
 type ToolBtnProps = {
@@ -127,11 +132,11 @@ function ToolBtn({ icon, title, onClick, active, className = '' }: ToolBtnProps)
       aria-label={title}
       onClick={onClick}
       className={`
-        w-10 h-10 sm:w-9 sm:h-9 flex-shrink-0 flex items-center justify-center rounded-lg text-sm
-        transition-all duration-150 select-none
+        w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg text-sm
+        transition-all duration-150 select-none touch-manipulation
         ${active
           ? 'bg-blue-500 text-white shadow-md'
-          : 'text-gray-300 hover:bg-white/10 hover:text-white'}
+          : 'text-gray-300 hover:bg-white/10 hover:text-white active:bg-white/10 active:text-white'}
         ${className}
       `}
     >
@@ -146,8 +151,8 @@ type DividerProps = {
 
 function Divider({ position }: DividerProps) {
   return position === 'top' || position === 'bottom'
-    ? <div className="flex-shrink-0 w-px h-5 bg-white/15 mx-0.5" />
-    : <div className="flex-shrink-0 h-px w-5 bg-white/15 my-0.5" />
+    ? <div className="flex-shrink-0 w-px h-6 bg-white/15 mx-1" />
+    : <div className="flex-shrink-0 h-px w-6 bg-white/15 my-1" />
 }
 
 type MoreMenuProps = {
@@ -273,13 +278,28 @@ export default function Toolbar({
   viewerAPI,
 }: ToolbarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const ghostRef = useRef<HTMLDivElement | null>(null)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [autoRotate, setAutoRotate] = useState(false)
-  const [showMore, setShowMore] = useState(
-    typeof window !== 'undefined' && window.innerWidth < 768
-  )
+  const [moreOpen, setMoreOpen] = useState(false)
   const isHorizontal = position === 'top' || position === 'bottom'
+
+  useEffect(() => {
+    if (!moreOpen) return
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = (e instanceof TouchEvent ? e.touches[0]?.target : e.target) as Node | null
+      if (target && containerRef.current && !containerRef.current.contains(target)) {
+        setMoreOpen(false)
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollLeft = 0
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [moreOpen])
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement)
@@ -287,39 +307,17 @@ export default function Toolbar({
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
-  // Measure overflow using the ghost div rendered in-flow (not off-screen)
-  useEffect(() => {
-    const ghost = ghostRef.current
-    if (!ghost) return
-    const check = () => {
-      if (isHorizontal) {
-        const availableWidth = document.documentElement.clientWidth - 16
-        setShowMore(availableWidth > 0 && ghost.offsetWidth > availableWidth)
-      } else {
-        const availableHeight = document.documentElement.clientHeight - 16
-        setShowMore(availableHeight > 0 && ghost.offsetHeight > availableHeight)
-      }
-    }
-    const ro = new ResizeObserver(check)
-    ro.observe(ghost)
-    ro.observe(ghost.parentElement!)
-    window.addEventListener('resize', check)
-    // Defer first check so layout is settled
-    const raf = requestAnimationFrame(check)
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', check)
-      cancelAnimationFrame(raf)
-    }
-  }, [isHorizontal])
-
   const wrapClass = position === 'top'
-    ? 'flex flex-row items-center gap-0.5 px-3 py-2 bg-[#2d3748]/95 backdrop-blur-sm rounded-b-xl shadow-xl self-center'
+    ? 'flex flex-row items-stretch bg-[#2d3748]/95 backdrop-blur-sm rounded-b-xl shadow-xl self-center max-w-[50vw] min-w-0'
     : position === 'bottom'
-    ? 'flex flex-row items-center gap-0.5 px-3 py-2 bg-[#2d3748]/95 backdrop-blur-sm rounded-t-xl shadow-xl self-center'
+    ? 'flex flex-row items-stretch bg-[#2d3748]/95 backdrop-blur-sm rounded-t-xl shadow-xl self-center max-w-[50vw] min-w-0'
     : position === 'left'
-    ? 'flex flex-col items-center gap-0.5 px-2 py-3 bg-[#2d3748]/95 backdrop-blur-sm rounded-r-xl shadow-xl self-center'
-    : 'flex flex-col items-center gap-0.5 px-2 py-3 bg-[#2d3748]/95 backdrop-blur-sm rounded-l-xl shadow-xl self-center'
+    ? 'flex flex-col items-stretch bg-[#2d3748]/95 backdrop-blur-sm rounded-r-xl shadow-xl self-center max-h-[50vh] min-h-0'
+    : 'flex flex-col items-stretch bg-[#2d3748]/95 backdrop-blur-sm rounded-l-xl shadow-xl self-center max-h-[50vh] min-h-0'
+
+  const scrollClass = isHorizontal
+    ? 'flex flex-row items-center gap-1 px-2 py-1.5 overflow-x-auto overflow-y-hidden scrollbar-none'
+    : 'flex flex-col items-center gap-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden scrollbar-none'
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -337,81 +335,45 @@ export default function Toolbar({
           : 'relative flex items-center z-50'
       }
     >
-      {/* Ghost — same layout as full toolbar, used to detect overflow. Invisible but in-flow. */}
-      <div
-        ref={ghostRef}
-        aria-hidden="true"
-        className={`invisible pointer-events-none absolute ${isHorizontal ? 'flex flex-row items-center gap-0.5 px-3 py-2' : 'flex flex-col items-center gap-0.5 px-2 py-3'}`}
-      >
-        {/* 13 buttons: 3 primary + 2 zoom + 4 orbit + 4 position */}
-        {[...Array(13)].map((_, i) => <div key={i} className="w-10 h-10 sm:w-9 sm:h-9 flex-shrink-0" />)}
-        {/* 3 dividers */}
-        {[...Array(3)].map((_, i) => (
-          <div key={`d${i}`} className={isHorizontal ? 'w-px h-5 mx-0.5 flex-shrink-0' : 'h-px w-5 my-0.5 flex-shrink-0'} />
-        ))}
-      </div>
 
       <div className={wrapClass} ref={containerRef}>
-
-
-        {/* Primary — always visible */}
-        <ToolBtn
-          icon={autoRotate ? <Icons.Pause /> : <Icons.Play />}
-          title={autoRotate ? 'Pause rotation' : 'Auto rotate'}
-          onClick={() => { setAutoRotate(v => !v); onToggleAutoRotate() }}
-          active={autoRotate}
-        />
-        <ToolBtn
-          icon={<Icons.Reset />}
-          title="Reset camera"
-          onClick={() => viewerAPI.current.reset?.()}
-        />
-        <ToolBtn
-          icon={isFullscreen ? <Icons.Minimize /> : <Icons.Fullscreen />}
-          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-          onClick={toggleFullscreen}
-        />
-
-        <Divider position={position} />
-
-        <ToolBtn
-          icon={<Icons.ZoomIn />}
-          title="Zoom in"
-          onClick={() => viewerAPI.current.zoomIn?.()}
-        />
-        <ToolBtn
-          icon={<Icons.ZoomOut />}
-          title="Zoom out"
-          onClick={() => viewerAPI.current.zoomOut?.()}
-        />
-
-        <Divider position={position} />
-
-        {showMore ? (
-          <MoreMenu key={position} position={position}>
-            <ToolBtn icon={<Icons.RotateCCW />}  title="Orbit left"  onClick={() => viewerAPI.current.orbitLeft?.()}  />
-            <ToolBtn icon={<Icons.RotateCW />}   title="Orbit right" onClick={() => viewerAPI.current.orbitRight?.()} />
-            <ToolBtn icon={<Icons.RotateUp />}   title="Orbit up"    onClick={() => viewerAPI.current.orbitUp?.()}    />
-            <ToolBtn icon={<Icons.RotateDown />} title="Orbit down"  onClick={() => viewerAPI.current.orbitDown?.()}  />
-            <Divider position={isHorizontal ? 'left' : 'top'} />
-            <ToolBtn icon={<Icons.PosTop />}    title="Toolbar: Top"    onClick={() => onPositionChange('top')}    active={position === 'top'}    />
-            <ToolBtn icon={<Icons.PosBottom />} title="Toolbar: Bottom" onClick={() => onPositionChange('bottom')} active={position === 'bottom'} />
-            <ToolBtn icon={<Icons.PosLeft />}   title="Toolbar: Left"   onClick={() => onPositionChange('left')}   active={position === 'left'}   />
-            <ToolBtn icon={<Icons.PosRight />}  title="Toolbar: Right"  onClick={() => onPositionChange('right')}  active={position === 'right'}  />
-          </MoreMenu>
-        ) : (
+        <div
+          ref={scrollRef}
+          className={scrollClass}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+        {moreOpen ? (
           <>
+            <ToolBtn icon={<Icons.Back />} title="Back" onClick={() => { setMoreOpen(false); if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollLeft = 0 }} />
+            <Divider position={position} />
             <ToolBtn icon={<Icons.RotateCCW />}  title="Orbit left"  onClick={() => viewerAPI.current.orbitLeft?.()}  />
             <ToolBtn icon={<Icons.RotateCW />}   title="Orbit right" onClick={() => viewerAPI.current.orbitRight?.()} />
             <ToolBtn icon={<Icons.RotateUp />}   title="Orbit up"    onClick={() => viewerAPI.current.orbitUp?.()}    />
             <ToolBtn icon={<Icons.RotateDown />} title="Orbit down"  onClick={() => viewerAPI.current.orbitDown?.()}  />
             <Divider position={position} />
-            <ToolBtn icon={<Icons.PosTop />}    title="Toolbar: Top"    onClick={() => onPositionChange('top')}    active={position === 'top'}    />
-            <ToolBtn icon={<Icons.PosBottom />} title="Toolbar: Bottom" onClick={() => onPositionChange('bottom')} active={position === 'bottom'} />
-            <ToolBtn icon={<Icons.PosLeft />}   title="Toolbar: Left"   onClick={() => onPositionChange('left')}   active={position === 'left'}   />
-            <ToolBtn icon={<Icons.PosRight />}  title="Toolbar: Right"  onClick={() => onPositionChange('right')}  active={position === 'right'}  />
+            <ToolBtn icon={<Icons.PosTop />}    title="Toolbar: Top"    onClick={() => { onPositionChange('top');    setMoreOpen(false) }} active={position === 'top'}    />
+            <ToolBtn icon={<Icons.PosBottom />} title="Toolbar: Bottom" onClick={() => { onPositionChange('bottom'); setMoreOpen(false) }} active={position === 'bottom'} />
+            <ToolBtn icon={<Icons.PosLeft />}   title="Toolbar: Left"   onClick={() => { onPositionChange('left');   setMoreOpen(false) }} active={position === 'left'}   />
+            <ToolBtn icon={<Icons.PosRight />}  title="Toolbar: Right"  onClick={() => { onPositionChange('right');  setMoreOpen(false) }} active={position === 'right'}  />
+          </>
+        ) : (
+          <>
+            <ToolBtn
+              icon={autoRotate ? <Icons.Pause /> : <Icons.Play />}
+              title={autoRotate ? 'Pause rotation' : 'Auto rotate'}
+              onClick={() => { setAutoRotate(v => !v); onToggleAutoRotate() }}
+              active={autoRotate}
+            />
+            <ToolBtn icon={<Icons.Reset />}    title="Reset camera"                        onClick={() => viewerAPI.current.reset?.()}  />
+            <ToolBtn icon={isFullscreen ? <Icons.Minimize /> : <Icons.Fullscreen />} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} onClick={toggleFullscreen} />
+            <Divider position={position} />
+            <ToolBtn icon={<Icons.ZoomIn />}   title="Zoom in"                             onClick={() => viewerAPI.current.zoomIn?.()}  />
+            <ToolBtn icon={<Icons.ZoomOut />}  title="Zoom out"                            onClick={() => viewerAPI.current.zoomOut?.()} />
+            <Divider position={position} />
+            <ToolBtn icon={<Icons.More />} title="More options" active={moreOpen} onClick={() => { setMoreOpen(true); if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollLeft = 0 }} />
           </>
         )}
+        </div>
       </div>
     </div>
   )
