@@ -31,7 +31,7 @@ export default function CameraController({ viewerAPIRef }: CameraControllerProps
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const animationRef = useRef<CameraAnimation | null>(null)
   const autoRotateRef = useRef(false)
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
 
   const animateCamera = useCallback(
     (toPosition: THREE.Vector3, toTarget?: THREE.Vector3) => {
@@ -100,6 +100,21 @@ export default function CameraController({ viewerAPIRef }: CameraControllerProps
     animateCamera(controls.target.clone().add(offset))
   }, [animateCamera, camera])
 
+  // Ctrl+scroll → zoom (listener on window so browser zoom is suppressed before it fires)
+  useEffect(() => {
+    const canvas = gl.domElement
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return
+      e.preventDefault()
+      // Only zoom when the pointer is over the canvas
+      if (!canvas.contains(e.target as Node) && e.target !== canvas) return
+      const factor = e.deltaY > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR
+      zoom(factor)
+    }
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [gl, zoom])
+
   // Populate shared API ref so Toolbar can call these
   useEffect(() => {
     viewerAPIRef.current = {
@@ -127,6 +142,7 @@ export default function CameraController({ viewerAPIRef }: CameraControllerProps
   return (
     <OrbitControls
       ref={controlsRef}
+      enableZoom={false}
       enableDamping
       dampingFactor={0.08}
       autoRotate={false}
