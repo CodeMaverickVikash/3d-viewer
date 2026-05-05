@@ -9,31 +9,35 @@ type HotspotProps = {
 export default function Hotspot({ hotspot }: HotspotProps) {
   const { id, position, title, text } = hotspot
   const [hovered, setHovered] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const visible = hovered || pinned
 
   return (
-    <Html position={position} zIndexRange={[100, 0]} occlude>
+    <Html position={position} zIndexRange={[50, 0]} occlude>
       <div className="relative flex flex-col items-center" style={{ transform: 'translate(-50%, -50%)' }}>
         <button
           type="button"
           aria-label={`Show ${title}`}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
+          onClick={() => setPinned(v => !v)}
           className={`
             w-8 h-8 rounded-full flex items-center justify-center
             text-white text-sm font-bold border-2 border-white
             shadow-lg cursor-pointer z-10 transition-all duration-200
-            ${hovered ? 'bg-blue-500 scale-110' : 'bg-[#2d3748] hover:bg-blue-500'}
+            ${visible ? 'bg-blue-500 scale-110' : 'bg-[#2d3748] hover:bg-blue-500'}
           `}
         >
           {id}
         </button>
 
-        {hovered && (
+        {visible && (
           <div
             className="absolute bottom-11 left-1/2 -translate-x-1/2 z-20
-                        bg-white text-gray-800 rounded-2xl shadow-2xl w-56
+                        bg-white text-gray-800 rounded-2xl shadow-2xl
+                        w-48 sm:w-56
                         border border-gray-100"
-            style={{ pointerEvents: 'auto' }}
+            style={{ pointerEvents: 'auto', maxWidth: 'min(14rem, calc(100vw - 2rem))' }}
           >
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-0 h-0
                             border-l-[10px] border-r-[10px] border-t-[12px]
@@ -56,9 +60,17 @@ export default function Hotspot({ hotspot }: HotspotProps) {
               <button
                 type="button"
                 aria-label={`Close ${title}`}
-                onMouseDown={() => setHovered(false)}
+                onMouseDown={(e) => {
+                  setPinned(false)
+                  setHovered(false)
+                  const { clientX, clientY } = e
+                  setTimeout(() => {
+                    const el = document.elementFromPoint(clientX, clientY)
+                    el?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true }))
+                  }, 0)
+                }}
                 className="w-6 h-6 flex items-center justify-center rounded-full
-                           text-gray-400 hover:text-gray-600 hover:bg-gray-100 text-sm"
+                           text-gray-400 hover:text-gray-600 hover:bg-gray-100 text-sm cursor-pointer"
               >
                 x
               </button>

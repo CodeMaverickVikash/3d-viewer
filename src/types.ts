@@ -1,4 +1,4 @@
-export type ToolbarPosition = 'right' | 'left' | 'top'
+export type ToolbarPosition = 'left' | 'right' | 'top' | 'bottom'
 
 export type HotspotData = {
   id: number
