@@ -257,8 +257,10 @@ const ModelViewerDevScene = memo(function ModelViewerDevScene({
         shadow-softness="0.8"
         interpolation-decay="120"
         auto-rotate-delay="0"
+        rotation-per-second="30deg"
         interaction-prompt="auto"
         style={{ display: 'block', height: '100%', width: '100%' }}
+        disable-tap
       >
         {hotspots.map((hotspot) => (
           <ModelViewerHotspot key={hotspot.id} hotspot={hotspot} />
