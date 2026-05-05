@@ -1,5 +1,5 @@
 import '@google/model-viewer/dist/model-viewer.min.js'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import type { MutableRefObject } from 'react'
 import type { ModelViewerElement } from '@google/model-viewer'
 import type { HotspotData, ViewerAPI } from '../types'
@@ -14,10 +14,12 @@ type ModelViewerDevSceneProps = {
 const DEFAULT_CAMERA_ORBIT = '0deg 75deg auto'
 const DEFAULT_CAMERA_TARGET = 'auto'
 const DEFAULT_FIELD_OF_VIEW = 'auto'
-const ORBIT_STEP = Math.PI / 10
-const PHI_STEP = Math.PI / 14
-const MIN_PHI = 0.25
-const MAX_PHI = Math.PI - 0.25
+const ORBIT_STEP = 0.35
+const ZOOM_FACTOR = 0.82
+const MIN_RADIUS = 0.5
+const MAX_RADIUS = 8
+const MIN_PHI = 0.05
+const MAX_PHI = Math.PI - 0.05
 
 function setOrbit(
   viewer: ModelViewerElement | null,
@@ -31,60 +33,174 @@ function setOrbit(
 
   const orbit = next(viewer.getCameraOrbit())
   viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`
-  viewer.jumpCameraToGoal()
+}
+
+function ModelViewerHotspot({ hotspot }: { hotspot: HotspotData }) {
+  const { id, position, title, text } = hotspot
+  const [hovered, setHovered] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const visible = hovered || pinned
+
+  return (
+    <div
+      slot={`hotspot-${id}`}
+      data-position={`${position[0]}m ${position[1]}m ${position[2]}m`}
+      data-normal="0m 1m 0m"
+      className="relative flex flex-col items-center"
+      style={{ transform: 'translate(-50%, -50%)' }}
+    >
+      <button
+        type="button"
+        aria-label={`Show ${title}`}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => setPinned(v => !v)}
+        className={`z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white shadow-lg transition-all duration-200 ${
+          visible ? 'scale-110 bg-blue-500' : 'bg-[#2d3748] hover:bg-blue-500'
+        }`}
+      >
+        {id}
+      </button>
+
+      {visible && (
+        <div
+          className="absolute bottom-11 left-1/2 z-20 w-48 -translate-x-1/2 rounded-2xl border border-gray-100 bg-white text-gray-800 shadow-2xl sm:w-56"
+          style={{ pointerEvents: 'auto', maxWidth: 'min(14rem, calc(100vw - 2rem))' }}
+        >
+          <div className="absolute -bottom-3 left-1/2 h-0 w-0 -translate-x-1/2 border-l-[10px] border-r-[10px] border-t-[12px] border-l-transparent border-r-transparent border-t-white drop-shadow-sm" />
+
+          <div className="flex items-center justify-between px-3 pb-1 pt-3">
+            <button
+              type="button"
+              aria-label={`Play ${title} audio`}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label={`Close ${title}`}
+              onMouseDown={(event) => {
+                event.stopPropagation()
+                setPinned(false)
+                setHovered(false)
+                const { clientX, clientY } = event
+                setTimeout(() => {
+                  const el = document.elementFromPoint(clientX, clientY)
+                  el?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true }))
+                }, 0)
+              }}
+              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              x
+            </button>
+          </div>
+
+          <div className="px-3 pb-3 text-left">
+            <p className="mb-0.5 text-sm font-bold text-gray-900">{title}</p>
+            <p className="text-xs leading-relaxed text-gray-400">{text}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 const ModelViewerDevScene = memo(function ModelViewerDevScene({
   modelUrl,
   hotspots,
-  viewerAPI,
+  viewerAPI: viewerAPIRef,
 }: ModelViewerDevSceneProps) {
   const modelViewerRef = useRef<ModelViewerElement | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [progress, setProgress] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
 
+  const orbit = useCallback((deltaTheta: number, deltaPhi: number) => {
+    setOrbit(modelViewerRef.current, ({ theta, phi, radius }) => ({
+      theta: theta + deltaTheta,
+      phi: Math.min(MAX_PHI, Math.max(MIN_PHI, phi + deltaPhi)),
+      radius,
+    }))
+  }, [])
+
+  const zoom = useCallback((factor: number) => {
+    setOrbit(modelViewerRef.current, ({ theta, phi, radius }) => ({
+      theta,
+      phi,
+      radius: Math.min(MAX_RADIUS, Math.max(MIN_RADIUS, radius * factor)),
+    }))
+  }, [])
+
   useEffect(() => {
     const viewer = modelViewerRef.current
     if (!viewer) return
 
-    viewerAPI.current.reset = () => {
+    viewerAPIRef.current = {
+      reset: () => {
         viewer.cameraOrbit = DEFAULT_CAMERA_ORBIT
         viewer.cameraTarget = DEFAULT_CAMERA_TARGET
         viewer.fieldOfView = DEFAULT_FIELD_OF_VIEW
         viewer.resetTurntableRotation()
-        viewer.jumpCameraToGoal()
-      }
-    viewerAPI.current.zoomIn = () => viewer.zoom(1)
-    viewerAPI.current.zoomOut = () => viewer.zoom(-1)
-    viewerAPI.current.orbitLeft = () => {
-      setOrbit(viewer, ({ theta, phi, radius }) => ({ theta: theta - ORBIT_STEP, phi, radius }))
-    }
-    viewerAPI.current.orbitRight = () => {
-      setOrbit(viewer, ({ theta, phi, radius }) => ({ theta: theta + ORBIT_STEP, phi, radius }))
-    }
-    viewerAPI.current.orbitUp = () => {
-      setOrbit(viewer, ({ theta, phi, radius }) => ({
-        theta,
-        phi: Math.max(MIN_PHI, phi - PHI_STEP),
-        radius,
-      }))
-    }
-    viewerAPI.current.orbitDown = () => {
-      setOrbit(viewer, ({ theta, phi, radius }) => ({
-        theta,
-        phi: Math.min(MAX_PHI, phi + PHI_STEP),
-        radius,
-      }))
-    }
-    viewerAPI.current.toggleAutoRotate = () => {
-      viewer.autoRotate = !viewer.autoRotate
+      },
+      zoomIn: () => zoom(ZOOM_FACTOR),
+      zoomOut: () => zoom(1 / ZOOM_FACTOR),
+      orbitLeft: () => orbit(-ORBIT_STEP, 0),
+      orbitRight: () => orbit(ORBIT_STEP, 0),
+      orbitUp: () => orbit(0, -ORBIT_STEP),
+      orbitDown: () => orbit(0, ORBIT_STEP),
+      toggleAutoRotate: () => {
+        viewer.autoRotate = !viewer.autoRotate
+      },
     }
 
     return () => {
-      viewerAPI.current = {}
+      viewerAPIRef.current = {}
     }
-  }, [viewerAPI])
+  }, [orbit, viewerAPIRef, zoom])
+
+  useEffect(() => {
+    const viewer = modelViewerRef.current
+    if (!viewer) return
+
+    const onEnter = () => { viewer.style.cursor = 'grab' }
+    const onLeave = () => { viewer.style.cursor = '' }
+    const onDown = () => { viewer.style.cursor = 'grabbing' }
+    const onUp = () => { viewer.style.cursor = viewer.matches(':hover') ? 'grab' : '' }
+
+    viewer.addEventListener('pointerenter', onEnter)
+    viewer.addEventListener('pointerleave', onLeave)
+    viewer.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointerup', onUp)
+
+    return () => {
+      viewer.removeEventListener('pointerenter', onEnter)
+      viewer.removeEventListener('pointerleave', onLeave)
+      viewer.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [])
+
+  useEffect(() => {
+    const viewer = modelViewerRef.current
+    if (!viewer) return
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return
+      event.preventDefault()
+      if (!viewer.contains(event.target as Node) && event.target !== viewer) return
+      const factor = event.deltaY > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR
+      zoom(factor)
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [zoom])
 
   useEffect(() => {
     const viewer = modelViewerRef.current
@@ -138,24 +254,13 @@ const ModelViewerDevScene = memo(function ModelViewerDevScene({
         environment-image="neutral"
         shadow-intensity="0.85"
         shadow-softness="0.8"
+        interpolation-decay="120"
+        auto-rotate-delay="0"
         interaction-prompt="auto"
         style={{ display: 'block', height: '100%', width: '100%' }}
       >
         {hotspots.map((hotspot) => (
-          <button
-            key={hotspot.id}
-            slot={`hotspot-${hotspot.id}`}
-            type="button"
-            data-position={`${hotspot.position[0]}m ${hotspot.position[1]}m ${hotspot.position[2]}m`}
-            data-normal="0m 1m 0m"
-            className="group relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#2d3748] text-sm font-bold text-white shadow-lg transition hover:bg-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
-          >
-            {hotspot.id}
-            <span className="pointer-events-none absolute bottom-11 left-1/2 hidden w-56 -translate-x-1/2 rounded-xl border border-gray-100 bg-white p-3 text-left shadow-2xl group-hover:block group-focus-visible:block">
-              <span className="mb-1 block text-sm font-bold text-gray-900">{hotspot.title}</span>
-              <span className="block text-xs leading-relaxed text-gray-500">{hotspot.text}</span>
-            </span>
-          </button>
+          <ModelViewerHotspot key={hotspot.id} hotspot={hotspot} />
         ))}
       </model-viewer>
       {loadError && (

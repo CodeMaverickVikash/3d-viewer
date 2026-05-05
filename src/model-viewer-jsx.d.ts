@@ -14,7 +14,9 @@ type ModelViewerAttributes = DetailedHTMLProps<
   'environment-image'?: string
   exposure?: string | number
   'field-of-view'?: string
+  'auto-rotate-delay'?: string | number
   'interaction-prompt'?: string
+  'interpolation-decay'?: string | number
   'max-camera-orbit'?: string
   'min-camera-orbit'?: string
   'poster'?: string
