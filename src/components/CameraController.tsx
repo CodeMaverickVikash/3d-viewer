@@ -100,6 +100,27 @@ export default function CameraController({ viewerAPIRef }: CameraControllerProps
     animateCamera(controls.target.clone().add(offset))
   }, [animateCamera, camera])
 
+  // Drag cursor feedback
+  useEffect(() => {
+    const canvas = gl.domElement
+    const onEnter    = () => { canvas.style.cursor = 'grab' }
+    const onLeave    = () => { canvas.style.cursor = '' }
+    const onDown     = () => { canvas.style.cursor = 'grabbing' }
+    const onUp       = () => { canvas.style.cursor = canvas.matches(':hover') ? 'grab' : '' }
+
+    canvas.addEventListener('pointerenter', onEnter)
+    canvas.addEventListener('pointerleave', onLeave)
+    canvas.addEventListener('pointerdown',  onDown)
+    window.addEventListener('pointerup',    onUp)
+
+    return () => {
+      canvas.removeEventListener('pointerenter', onEnter)
+      canvas.removeEventListener('pointerleave', onLeave)
+      canvas.removeEventListener('pointerdown',  onDown)
+      window.removeEventListener('pointerup',    onUp)
+    }
+  }, [gl])
+
   // Ctrl+scroll → zoom (listener on window so browser zoom is suppressed before it fires)
   useEffect(() => {
     const canvas = gl.domElement
