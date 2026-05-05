@@ -191,15 +191,15 @@ const ModelViewerDevScene = memo(function ModelViewerDevScene({
     if (!viewer) return
 
     const handleWheel = (event: WheelEvent) => {
+      if (!viewer.contains(event.target as Node) && event.target !== viewer) return
       if (!event.ctrlKey) return
       event.preventDefault()
-      if (!viewer.contains(event.target as Node) && event.target !== viewer) return
       const factor = event.deltaY > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR
       zoom(factor)
     }
 
-    window.addEventListener('wheel', handleWheel, { passive: false })
-    return () => window.removeEventListener('wheel', handleWheel)
+    viewer.addEventListener('wheel', handleWheel, { passive: false })
+    return () => viewer.removeEventListener('wheel', handleWheel)
   }, [zoom])
 
   useEffect(() => {
@@ -251,6 +251,7 @@ const ModelViewerDevScene = memo(function ModelViewerDevScene({
         max-camera-orbit="auto auto 8m"
         min-field-of-view="10deg"
         max-field-of-view="45deg"
+        disable-zoom={true}
         environment-image="neutral"
         shadow-intensity="0.85"
         shadow-softness="0.8"
