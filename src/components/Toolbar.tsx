@@ -184,21 +184,16 @@ function MoreMenu({ position, children }: MoreMenuProps) {
     setOpen(v => !v)
   }, [open, computeCoords, position])
 
-  // Close and reset coords whenever toolbar moves to a new position
-  useEffect(() => {
-    setOpen(false)
-    setCoords(null)
-  }, [position])
-
   // Keep coords fresh on resize, scroll, or position change while open
   useEffect(() => {
     if (!open) return
     computeCoords() // recompute immediately in case position changed
-    window.addEventListener('resize', computeCoords)
-    window.addEventListener('scroll', computeCoords, true)
+    const updateCoords = () => computeCoords()
+    window.addEventListener('resize', updateCoords)
+    window.addEventListener('scroll', updateCoords, true)
     return () => {
-      window.removeEventListener('resize', computeCoords)
-      window.removeEventListener('scroll', computeCoords, true)
+      window.removeEventListener('resize', updateCoords)
+      window.removeEventListener('scroll', updateCoords, true)
     }
   }, [open, computeCoords, position])
 
@@ -298,9 +293,11 @@ export default function Toolbar({
     if (!ghost) return
     const check = () => {
       if (isHorizontal) {
-        setShowMore(ghost.offsetWidth > document.documentElement.clientWidth - 16)
+        const availableWidth = document.documentElement.clientWidth - 16
+        setShowMore(availableWidth > 0 && ghost.offsetWidth > availableWidth)
       } else {
-        setShowMore(ghost.offsetHeight > document.documentElement.clientHeight - 16)
+        const availableHeight = document.documentElement.clientHeight - 16
+        setShowMore(availableHeight > 0 && ghost.offsetHeight > availableHeight)
       }
     }
     const ro = new ResizeObserver(check)
@@ -391,7 +388,7 @@ export default function Toolbar({
         <Divider position={position} />
 
         {showMore ? (
-          <MoreMenu position={position}>
+          <MoreMenu key={position} position={position}>
             <ToolBtn icon={<Icons.RotateCCW />}  title="Orbit left"  onClick={() => viewerAPI.current.orbitLeft?.()}  />
             <ToolBtn icon={<Icons.RotateCW />}   title="Orbit right" onClick={() => viewerAPI.current.orbitRight?.()} />
             <ToolBtn icon={<Icons.RotateUp />}   title="Orbit up"    onClick={() => viewerAPI.current.orbitUp?.()}    />

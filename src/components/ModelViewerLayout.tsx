@@ -1,15 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
 import Toolbar from './Toolbar'
 import Scene from './Scene'
-import type { HotspotData, ToolbarPosition, ViewerAPI } from '../types'
+import ModelViewerDevScene from './ModelViewerDevScene'
+import type { HotspotData, ToolbarPosition, ViewerAPI, ViewerRenderer } from '../types'
 import Loader from './Loader'
 
 type ModelViewerLayoutProps = {
   hotspots?: HotspotData[]
   modelUrl: string
+  renderer?: ViewerRenderer
 }
 
-export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelViewerLayoutProps) {
+export default function ModelViewerLayout({
+  hotspots = [],
+  modelUrl,
+  renderer = 'react-three-fiber',
+}: ModelViewerLayoutProps) {
   const [toolbarPosition, setToolbarPosition] = useState<ToolbarPosition>(
     () => (typeof window !== 'undefined' && window.innerWidth < 768) ? 'bottom' : 'right'
   )
@@ -37,7 +43,7 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
 
   return (
     <div className={containerClass}>
-      <Loader />
+      {renderer === 'react-three-fiber' && <Loader />}
       <Toolbar
         position={toolbarPosition}
         onPositionChange={setToolbarPosition}
@@ -47,11 +53,19 @@ export default function ModelViewerLayout({ hotspots = [], modelUrl }: ModelView
 
       {/* Canvas + hotspots area */}
       <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
-        <Scene
-          modelUrl={modelUrl}
-          hotspots={hotspots}
-          viewerAPI={viewerAPI}
-        />
+        {renderer === 'model-viewer' ? (
+          <ModelViewerDevScene
+            modelUrl={modelUrl}
+            hotspots={hotspots}
+            viewerAPI={viewerAPI}
+          />
+        ) : (
+          <Scene
+            modelUrl={modelUrl}
+            hotspots={hotspots}
+            viewerAPI={viewerAPI}
+          />
+        )}
       </div>
     </div>
   )
